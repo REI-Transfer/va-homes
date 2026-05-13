@@ -9,9 +9,10 @@ const config = getConfig()
 const heroVideoUrl = process.env.NEXT_PUBLIC_HERO_VIDEO_URL || ""
 
 export default function ThankYouPage() {
-  useEffect(() => {
-    try { if (window.fbq) window.fbq("track", "Lead") } catch {}
-  }, [])
+  // Lead event is fired from the survey form with eventID-based dedup.
+  // Firing it again here would create a duplicate Meta event (no shared eventID
+  // = Meta cannot dedupe). Inflated lead counts in Meta were traced to this in
+  // May 2026. Do not re-add a Lead track here without coordinating eventIDs.
 
   return (
     <main className="relative min-h-screen bg-gray-50">
