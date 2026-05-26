@@ -23,6 +23,7 @@ export default function AdvertorialRoute() {
         marketName={m}
         accentColor={cfg.accentColor}
         serviceBounds={cfg.serviceBounds || undefined}
+        serviceStates={cfg.serviceStates}
         ownerName={cfg.ownerName}
       />
     </main>

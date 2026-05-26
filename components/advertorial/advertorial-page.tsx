@@ -2,13 +2,20 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { SurveyCard } from "@/components/survey/survey-card"
+import { SurveyCard } from "@/components/v2/survey-card"
 import { AddressAutocomplete, type AddressDetails } from "@/components/survey/address-autocomplete"
 
-// Advertorial editorial landing page. Embeds this repo's existing SurveyCard, which reads its
-// own config and redirects to /thank-you on submit. VA's SurveyCard takes no props, so the
-// sticky top address bar and every inline CTA open a popup that renders the SurveyCard from its
-// own first step. (No initialAddress seeding: the survey component is left untouched.)
+// Advertorial editorial landing page. Embeds the SAME v2 SurveyCard the main live flow
+// (app/page.tsx) uses, which reads its own config, posts to /api/submit, and redirects to
+// /thank-you on submit. The v2 SurveyCard already supports an additive `initialAddress` prop
+// that seeds the address and opens the form at step 2.
+//
+// The sticky top address bar runs the SAME state geofence the form uses (config.serviceStates).
+// On a valid in-area selection we seed the address into the popup form (opens at step 2 so the
+// homeowner is not asked twice). Out-of-area or typed-without-select opens at step 1, so the
+// disqualify logic is never bypassed. We never touch the form fields, payload, /api/submit,
+// webhook, phone wiring, or pixel.
+//
 // Company/phone/market/accent come from props (server config). Tuned for a 45+ Virginia seller
 // audience: calm empathy-first voice, large readable type, trust signals above the fold,
 // mechanism preview, repeated full-width CTAs, FAQ, compare table.
@@ -20,6 +27,7 @@ interface AdvertorialPageProps {
   marketName: string
   accentColor: string
   serviceBounds?: { south: number; north: number; west: number; east: number } | null
+  serviceStates?: string[]
   ownerName?: string
   writerName?: string
   writerRole?: string
@@ -33,6 +41,7 @@ export function AdvertorialPage({
   marketName,
   accentColor,
   serviceBounds = null,
+  serviceStates = [],
   ownerName,
   writerName = "Margaret Ellison",
   writerRole = "Senior Housing Correspondent",
@@ -46,6 +55,8 @@ export function AdvertorialPage({
   const [showSticky, setShowSticky] = useState(false)
   const [stickyAddr, setStickyAddr] = useState("")
   const [modalOpen, setModalOpen] = useState(false)
+  // Seeded when a VALID in-area address is picked in the top bar; opens popup at step 2.
+  const [seededAddress, setSeededAddress] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => {
@@ -60,14 +71,22 @@ export function AdvertorialPage({
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // VA's SurveyCard owns its own address step, so the sticky bar simply opens the popup on a
-  // valid selection (or on button click). The address typed in the bar starts the survey fresh.
-  const handleStickySelect = (_address: string, _details: AddressDetails) => { setModalOpen(true) }
-  const openModalFromButton = () => { setModalOpen(true) }
+  // Top-bar autocomplete selection. Run the SAME state geofence the v2 SurveyCard uses
+  // (config.serviceStates). On a valid in-area pick, seed the address and open the popup at
+  // step 2. Out-of-area or typed-without-select opens at step 1 so the DQ is never bypassed.
+  const isStateInArea = (state?: string) => {
+    const s = (state || "").toUpperCase()
+    return serviceStates.length === 0 || serviceStates.includes(s)
+  }
+  const handleStickySelect = (address: string, details: AddressDetails) => {
+    setSeededAddress(isStateInArea(details.state) ? address : null)
+    setModalOpen(true)
+  }
+  const openModalFromButton = () => { setSeededAddress(null); setModalOpen(true) }
 
   const Cta = ({ label }: { label: string }) => (
     <div className="my-[36px] flex justify-center">
-      <button onClick={() => setModalOpen(true)} style={{ background: C.cta }} className="w-full max-w-[540px] text-white font-extrabold text-[18px] md:text-[20px] text-center px-6 py-[19px] rounded-[40px] hover:opacity-95 transition-opacity shadow-sm">
+      <button onClick={openModalFromButton} style={{ background: C.cta }} className="w-full max-w-[540px] text-white font-extrabold text-[18px] md:text-[20px] text-center px-6 py-[19px] rounded-[40px] hover:opacity-95 transition-opacity shadow-sm">
         {label}
       </button>
     </div>
@@ -331,7 +350,7 @@ export function AdvertorialPage({
           <p style={{ color: C.accent }} className="text-[26px] font-extrabold mb-2">Get Your Fair Written Cash Offer</p>
           <p className="text-[15px] mb-5">Sell it as it stands. No repairs, no showings, no commission. You name the closing date.</p>
           <p style={{ color: C.muted }} className="text-[14px] mb-[18px] leading-[1.5]">We review a limited number of addresses each week to keep our turnaround quick. If your home is a fit, the sooner we see it, the sooner you have your number.</p>
-          <button onClick={() => setModalOpen(true)} style={{ background: C.cta }} className="block w-full text-white font-extrabold text-[17px] text-center px-5 py-[17px] rounded-[40px] hover:opacity-95 transition-opacity">
+          <button onClick={openModalFromButton} style={{ background: C.cta }} className="block w-full text-white font-extrabold text-[17px] text-center px-5 py-[17px] rounded-[40px] hover:opacity-95 transition-opacity">
             See What My Home Qualifies For →
           </button>
           <p className="mt-4 text-[14px]">Prefer to talk it through?<br className="sm:hidden" /> Call us at{" "}
@@ -358,7 +377,7 @@ export function AdvertorialPage({
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4" style={{ background: "rgba(0,0,0,0.55)" }} onClick={() => setModalOpen(false)}>
           <div className="relative w-full max-w-[600px] my-4" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setModalOpen(false)} aria-label="Close" className="absolute -top-3 -right-3 z-10 h-9 w-9 rounded-full bg-white text-gray-700 text-xl font-bold shadow-md flex items-center justify-center hover:bg-gray-100">×</button>
-            <SurveyCard />
+            <SurveyCard key={seededAddress || "modal"} initialAddress={seededAddress ?? undefined} />
           </div>
         </div>
       )}
