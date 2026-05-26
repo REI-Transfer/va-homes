@@ -34,6 +34,31 @@ declare global {
   }
 }
 
+// Module-level singleton loader so multiple AddressAutocomplete instances
+// (sticky bar + v2 card inline + modal) never inject the Maps script more than
+// once. Guarded by data-google-maps. Fixes "included multiple times" -> broken dropdown.
+let googleMapsPromise: Promise<void> | null = null
+function loadGoogleMaps(): Promise<void> {
+  if (typeof window !== "undefined" && window.google?.maps?.places) return Promise.resolve()
+  if (googleMapsPromise) return googleMapsPromise
+  googleMapsPromise = new Promise<void>((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>("script[data-google-maps]")
+    if (existing) {
+      if (window.google?.maps?.places) resolve()
+      else existing.addEventListener("load", () => resolve())
+      return
+    }
+    const script = document.createElement("script")
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`
+    script.async = true
+    script.defer = true
+    script.setAttribute("data-google-maps", "true")
+    script.onload = () => resolve()
+    document.head.appendChild(script)
+  })
+  return googleMapsPromise
+}
+
 const BLOCKED_ADDRESSES = [
   // Add client-specific blocked addresses here
 ]
@@ -56,26 +81,15 @@ export function AddressAutocomplete({
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    // Check if script already loaded
-    if (window.google?.maps?.places) {
+    let cancelled = false
+    loadGoogleMaps().then(() => {
+      if (cancelled) return
       setIsLoaded(true)
       initAutocomplete()
-      return
-    }
-
-    // Load Google Places script
-    const script = document.createElement("script")
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`
-    script.async = true
-    script.defer = true
-    script.onload = () => {
-      setIsLoaded(true)
-      initAutocomplete()
-    }
-    document.head.appendChild(script)
+    })
 
     return () => {
-      // Cleanup
+      cancelled = true
       if (autocompleteRef.current) {
         google.maps.event.clearInstanceListeners(autocompleteRef.current)
       }
