@@ -1,11 +1,16 @@
 "use client"
 
 import { useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { CheckCircle2, Phone, Clock, Shield } from "lucide-react"
 import { FooterLinks } from "@/components/polar/footer-links"
+import { ContactCTA } from "@/components/article/contact-cta"
 import { getConfig } from "@/lib/config"
+import { ARTICLES } from "@/lib/articles"
 
 const config = getConfig()
+const smsKeyword = process.env.NEXT_PUBLIC_SMS_KEYWORD || "OFFER"
 const heroVideoUrl = process.env.NEXT_PUBLIC_HERO_VIDEO_URL || ""
 
 export default function ThankYouPage() {
@@ -55,6 +60,56 @@ export default function ThankYouPage() {
                 <p className="text-sm text-gray-600">{desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Two-button text/call CTA so sellers can reach us right away while they wait. */}
+      <div className="bg-white pt-4">
+        <div className="mx-auto max-w-3xl px-4">
+          <ContactCTA
+            phoneDisplay={config.phoneDisplay}
+            phoneHref={config.phoneHref}
+            smsKeyword={smsKeyword}
+            heading="Want to talk sooner? Reach us now"
+            subheading={`Text us the word ${smsKeyword} or give us a call. A local ${config.companyName} team member will get right back to you.`}
+          />
+        </div>
+      </div>
+
+      {/* Honest reads: keeps the seller engaged with the advertorial library while they wait. */}
+      <div className="bg-gray-50 py-12 md:py-16">
+        <div className="mx-auto max-w-3xl px-4">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">While You Wait, A Few Honest Reads</h2>
+          <p className="text-center text-gray-600 mb-8 max-w-xl mx-auto">
+            Straight, plain-English answers to the questions most Virginia homeowners ask before they sell. No hype, no pressure.
+          </p>
+          <div className="grid grid-cols-1 gap-4">
+            {ARTICLES.slice(0, 4).map((a) => (
+              <Link
+                key={a.slug}
+                href={a.slug}
+                className="group flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-gray-200 bg-white transition-colors hover:border-[#2D6A4F] no-underline"
+              >
+                <Image
+                  src={a.image}
+                  alt={a.title}
+                  width={220}
+                  height={150}
+                  className="h-[150px] w-full sm:h-auto sm:w-[180px] shrink-0 object-cover bg-gray-100"
+                />
+                <div className="p-5">
+                  <h3 className="text-[17px] md:text-[18px] leading-snug font-bold text-gray-900 mb-1">{a.title}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{a.teaser}</p>
+                  <span className="text-sm font-semibold text-[#2D6A4F]">Read the article →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <Link href="/articles" className="text-sm font-semibold text-[#2D6A4F] underline">
+              See all articles
+            </Link>
           </div>
         </div>
       </div>
