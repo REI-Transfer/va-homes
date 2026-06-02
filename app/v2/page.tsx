@@ -1,16 +1,32 @@
-import { Header } from "@/components/v2/header";
-import { HeroSection } from "@/components/v2/hero-section";
-import { PhilosophySection } from "@/components/v2/philosophy-section";
-import { VslSection } from "@/components/v2/vsl-section";
-import { TrustSection } from "@/components/v2/trust-section";
-import { SalesLetterSection } from "@/components/v2/sales-letter-section";
-import { FaqSection } from "@/components/v2/faq-section";
-import { FooterSection } from "@/components/v2/footer-section";
+import { Figtree, Inter } from "next/font/google";
+import SiteHeader from "@/components/v2/hpg/SiteHeader";
+import Hero from "@/components/v2/hpg/Hero";
+import WhyUs from "@/components/v2/hpg/WhyUs";
+import Reviews from "@/components/v2/hpg/Reviews";
+import SiteFooter from "@/components/v2/hpg/SiteFooter";
+import StickyTopBar from "@/components/v2/hpg/StickyTopBar";
+import { HPG_STYLE_BLOCK } from "@/components/v2/hpg/hpg-tokens";
+import { getConfig } from "@/lib/config";
 import { HEADLINE_OVERRIDES, DEFAULT_HEADLINE } from "@/lib/headline-overrides";
 
 // Force dynamic rendering so searchParams is read on every request and Vercel
-// never serves a stale cached variant with the wrong headline.
+// never serves a stale cached variant with the wrong headline. Server-rendered,
+// no flash, no client hydration cost.
 export const dynamic = "force-dynamic";
+
+// Match HPG: Figtree for display, Inter for body. Loaded only on /v2.
+const figtree = Figtree({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-hpg-display",
+  display: "swap",
+});
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-hpg-sans",
+  display: "swap",
+});
 
 /**
  * Sanitize the raw utm_content for safe matching.
@@ -26,8 +42,8 @@ function sanitizeUtm(raw: string | undefined): string {
 }
 
 // Next.js 16 made searchParams ASYNC (a Promise). Server components must
-// await it before accessing properties — synchronous access returns undefined
-// and silently breaks the scent matcher. See:
+// await it before accessing properties. Sync access silently returns undefined
+// and breaks the scent matcher. See:
 // ~/.claude/projects/-Users-williamyu/memory/feedback_next16-searchparams-async.md
 export default async function V2Page({
   searchParams,
@@ -42,16 +58,40 @@ export default async function V2Page({
   const heroH1 = matched?.h1 ?? DEFAULT_HEADLINE.h1;
   const heroSub = matched?.sub ?? DEFAULT_HEADLINE.sub;
 
+  const config = getConfig();
+  // VA's config has no `marketName` field. Use serviceArea if it's a real
+  // value, otherwise default to "Virginia" so the urgency banner reads
+  // "June Cash Offer Window for Virginia".
+  const marketName =
+    config.serviceArea && config.serviceArea !== "Your Area"
+      ? config.serviceArea
+      : "Virginia";
+
   return (
-    <main className="v2-light min-h-screen">
-      <Header />
-      <HeroSection h1={heroH1} sub={heroSub} />
-      <PhilosophySection />
-      <VslSection />
-      <TrustSection />
-      <SalesLetterSection />
-      <FaqSection />
-      <FooterSection />
-    </main>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: HPG_STYLE_BLOCK }} />
+      <main
+        data-hpg-page
+        className={`${figtree.variable} ${inter.variable}`}
+        style={{ backgroundColor: "var(--hpg-cream)" }}
+      >
+        <StickyTopBar phoneDisplay={config.phoneDisplay} phoneHref={config.phoneHref} />
+        <SiteHeader
+          companyName={config.companyName}
+          phoneDisplay={config.phoneDisplay}
+          phoneHref={config.phoneHref}
+          logoUrl={config.logoUrl}
+        />
+        <Hero marketName={marketName} h1={heroH1} sub={heroSub} />
+        <WhyUs companyName={config.companyName} marketName={marketName} />
+        <Reviews />
+        <SiteFooter
+          companyName={config.companyName}
+          phoneDisplay={config.phoneDisplay}
+          phoneHref={config.phoneHref}
+          marketName={marketName}
+        />
+      </main>
+    </>
   );
 }
