@@ -44,7 +44,7 @@ export function Header() {
       >
         <div className="flex items-center justify-between transition-all duration-300 px-4 pl-6 py-2.5">
           <Link href="#hero" className="shrink-0">
-            <img src={config.logoUrl} alt={config.companyName} width={320} height={80} className="h-20 w-auto" />
+            <img src={config.logoUrl} alt={config.companyName} width={320} height={80} className="h-12 md:h-20 w-auto" />
           </Link>
 
           {pastHero && !showSurvey && (
