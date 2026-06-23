@@ -21,8 +21,8 @@ export const HEADLINE_OVERRIDES: HeadlineOverride[] = [
   // A1 — CashRush
   {
     match: /^A1-CashRush-/i,
-    h1: "Lock In Your Cash Offer Before The Virginia Market Cools",
-    sub: "Virginia homeowners 55+ are getting cash in 24 hours. Same price at closing.",
+    h1: "Lock In Your Cash Offer Before The Market Cools",
+    sub: "homeowners 55+ are getting cash in 24 hours. Same price at closing.",
   },
   // A2 — Pre2000Inspect
   {
@@ -39,38 +39,38 @@ export const HEADLINE_OVERRIDES: HeadlineOverride[] = [
   // A4 — 55EquityRecord
   {
     match: /^A4-55EquityRecord-/i,
-    h1: "Sitting On Record Equity? See What Your Virginia Home Is Actually Worth.",
-    sub: "Most Virginia owners 55+ don't know. Free cash offer in 24 hours.",
+    h1: "Sitting On Record Equity? See What Your Home Is Actually Worth.",
+    sub: "Most owners 55+ don't know. Free cash offer in 24 hours.",
   },
   // A5 — SalesFallApart
   {
     match: /^A5-SalesFallApart-/i,
-    h1: "1 In 4 Virginia Home Sales Fall Apart. Ours Don't.",
-    sub: "Virginia sellers 55+ are skipping the listing process. 14-day cash close.",
+    h1: "1 In 4 Home Sales Fall Apart. Ours Don't.",
+    sub: "sellers 55+ are skipping the listing process. 14-day cash close.",
   },
   // A6 — VacantHouse
   {
     match: /^A6-VacantHouse-/i,
-    h1: "Vacant House In Virginia? We'll Buy It In 14 Days.",
+    h1: "Vacant House Sitting Empty? We'll Buy It In 14 Days.",
     sub: "Long-term owners 45+ are getting cash without lifting a finger.",
   },
   // C1 — YearBuilt
   {
     match: /^C1-YearBuilt-/i,
-    h1: "Pre-2014 Virginia Home? See What It's Actually Worth.",
-    sub: "Long-built Virginia homes are sitting on record equity. 14-day cash close, no repairs.",
+    h1: "Pre-2014 Home? See What It's Actually Worth.",
+    sub: "Long-built homes are sitting on record equity. 14-day cash close, no repairs.",
   },
   // C2 — YearsOwned
   {
     match: /^C2-YearsOwned-/i,
-    h1: "Owned Your Virginia Home 10+ Years? See Your Number Today.",
-    sub: "Long-term Virginia owners are sitting on the strongest equity in years. As-is, 14-day cash close.",
+    h1: "Owned Your Home 10+ Years? See Your Number Today.",
+    sub: "Long-term owners are sitting on the strongest equity in years. As-is, 14-day cash close.",
   },
   // D2 — AgentVsCash
   {
     match: /^D2-AgentVsCash-/i,
     h1: "Would You Rather Wait 60 Days Or Get Cash In 14?",
-    sub: "Most Virginia owners 45+ are skipping the listing. Same price at closing, no commissions.",
+    sub: "Most owners 45+ are skipping the listing. Same price at closing, no commissions.",
   },
 
   // ===== Condition-distressed motivated-seller relaunch (2026-06-09) =====
@@ -85,7 +85,7 @@ export const HEADLINE_OVERRIDES: HeadlineOverride[] = [
   {
     match: /^E2-NumberHolds-/i,
     h1: "The Number We Put In Writing Is The Number You Get.",
-    sub: "No surprise inspection, no re-trade. A written Virginia cash offer that holds to closing.",
+    sub: "No surprise inspection, no re-trade. A written cash offer that holds to closing.",
   },
   // E3 — OfferCaves
   {
@@ -97,71 +97,71 @@ export const HEADLINE_OVERRIDES: HeadlineOverride[] = [
   {
     match: /^E4-NotPermission-/i,
     h1: "A Rough House Isn't Permission To Steal Your Equity.",
-    sub: "Get a real written number for your Virginia home, exactly as it sits. No lowball.",
+    sub: "Get a real written number for your home, exactly as it sits. No lowball.",
   },
   // E5 — AsItSits
   {
     match: /^E5-AsItSits-/i,
-    h1: "Sell Your Virginia House Exactly As It Sits.",
+    h1: "Sell Your House Exactly As It Sits.",
     sub: "No repairs. No cleanout. No showings. Nothing out of pocket. 14-day cash close.",
   },
   // E6 — NoJudgment
   {
     match: /^E6-NoJudgment-/i,
     h1: "Embarrassed By The Condition? No Judgment. Just A Way Out.",
-    sub: "We've bought worse. Sell your Virginia house as-is, privately, for cash.",
+    sub: "We've bought worse. Sell your house as-is, privately, for cash.",
   },
   // E7 — WontPassInspect
   {
     match: /^E7-WontPassInspect-/i,
     h1: "Won't Pass Inspection? That's Exactly Why We're A Fit.",
-    sub: "No loan, no appraisal to fail. We buy Virginia houses as-is and close in 14 days.",
+    sub: "No loan, no appraisal to fail. We buy houses as-is and close in 14 days.",
   },
   // E8 — Inherited
   {
     match: /^E8-Inherited-/i,
-    h1: "Inherited A Virginia House You Can't Face? Hand Us The Keys.",
+    h1: "Inherited A House You Can't Face? Hand Us The Keys.",
     sub: "No cleanout, no repairs, no trips back. We buy it as-is, with everything still inside.",
   },
   // E9 — Foreclosure
   {
     match: /^E9-Foreclosure-/i,
     h1: "Behind On Payments? Walk Away With Something, Not Nothing.",
-    sub: "There's still a window. Sell your Virginia house fast, clear the bank, keep your equity.",
+    sub: "There's still a window. Sell your house fast, clear the bank, keep your equity.",
   },
   // E10 — AnyCondition
   {
     match: /^E10-AnyCondition-/i,
     h1: "Fire, Flood, Foundation, Mold, Hoard. We'll Buy It.",
-    sub: "We buy Virginia houses in any condition, with everything still attached. Cash in 14 days.",
+    sub: "We buy houses in any condition, with everything still attached. Cash in 14 days.",
   },
   // E11 — WeightOff
   {
     match: /^E11-WeightOff-/i,
     h1: "The Day It's Sold Is The Day The Weight Comes Off.",
-    sub: "Sell your Virginia house as-is, for cash, and finally set it down. 14-day close.",
+    sub: "Sell your house as-is, for cash, and finally set it down. 14-day close.",
   },
   // J1 — TwoPaths
   {
     match: /^J1-TwoPaths-/i,
     h1: "Two Paths To The Same Sale. One Costs You Thousands First.",
-    sub: "Skip the repairs and the 60-day wait. Our Virginia cash offer won't change.",
+    sub: "Skip the repairs and the 60-day wait. Our cash offer won't change.",
   },
   // J2 — PollCard
   {
     match: /^J2-PollCard-/i,
     h1: "Does Your House Need Work You Can't Afford? You Have Options.",
-    sub: "Sell your Virginia house exactly as it sits. Cash offer in 24 hours, close in 14.",
+    sub: "Sell your house exactly as it sits. Cash offer in 24 hours, close in 14.",
   },
   // J3 — OneSale
   {
     match: /^J3-OneSale-/i,
     h1: "One Cash Sale Handles The Roof, The Cleanout, The Taxes.",
-    sub: "All of it, handled. We buy your Virginia house as-is and close in 14 days.",
+    sub: "All of it, handled. We buy your house as-is and close in 14 days.",
   },
 ]
 
 export const DEFAULT_HEADLINE = {
-  h1: "Sell Your Virginia House For Cash. In 24 Hours.",
-  sub: "Fair cash offers, no fees, no commissions. Local Virginia team.",
+  h1: "Sell Your House For Cash. In 24 Hours.",
+  sub: "Fair cash offers, no fees, no commissions. Local team.",
 }
