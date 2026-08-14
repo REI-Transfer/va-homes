@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 
+const BLOCKED_PHONES = ["7575893801"]
+const BLOCKED_EMAILS = ["charlesgaines99@gmail.com"]
+
 // Simple in-memory rate limiter (resets on deploy/restart)
 const submissionLog = new Map<string, { count: number; firstSubmit: number }>()
 
@@ -175,6 +178,12 @@ export async function POST(request: Request) {
 
     if (!(data.address || "").trim()) {
       return NextResponse.json({ success: false, error: "Address required" }, { status: 400 })
+    }
+
+    // Blocked spam contact: return the normal success response but do NOT
+    // forward to n8n, Meta CAPI, or GoFunnel.
+    if (BLOCKED_PHONES.includes(phone) || BLOCKED_EMAILS.includes(email)) {
+      return NextResponse.json({ success: true })
     }
 
     // Add server IP to payload before forwarding to GHL
