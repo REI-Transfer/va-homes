@@ -60,6 +60,9 @@ export function AdvertorialPage({
   const [modalOpen, setModalOpen] = useState(false)
   // Seeded when a VALID in-area address is picked in the top bar; opens popup at step 2.
   const [seededAddress, setSeededAddress] = useState<string | null>(null)
+  // Set when an OUT-OF-AREA address is picked in the top bar; opens popup straight on the
+  // SurveyCard's existing out-of-area screen instead of silently discarding the rejection.
+  const [rejectedAddress, setRejectedAddress] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => {
@@ -77,6 +80,7 @@ export function AdvertorialPage({
   // Top-bar autocomplete selection. Run the SAME state geofence the v2 SurveyCard uses
   // (config.serviceStates). On a valid in-area pick, seed the address and open the popup at
   // step 2. Out-of-area or typed-without-select opens at step 1 so the DQ is never bypassed.
+  // NOTE: this gate is a duplicate of the one in components/v2/survey-card.tsx handleAddressSelect — keep the two in sync.
   const isInArea = (details: AddressDetails) => {
     const s = (details.state || "").toUpperCase()
     const stateOk = serviceStates.length === 0 || serviceStates.includes(s)
@@ -84,10 +88,16 @@ export function AdvertorialPage({
     return stateOk && zipAllowedForState(s, details.postalCode, serviceZipsByState)
   }
   const handleStickySelect = (address: string, details: AddressDetails) => {
-    setSeededAddress(isInArea(details) ? address : null)
+    if (isInArea(details)) {
+      setSeededAddress(address)
+      setRejectedAddress(null)
+    } else {
+      setSeededAddress(null)
+      setRejectedAddress(address)
+    }
     setModalOpen(true)
   }
-  const openModalFromButton = () => { setSeededAddress(null); setModalOpen(true) }
+  const openModalFromButton = () => { setSeededAddress(null); setRejectedAddress(null); setModalOpen(true) }
 
   const Cta = ({ label }: { label: string }) => (
     <div className="my-[36px] flex justify-center">
@@ -382,7 +392,7 @@ export function AdvertorialPage({
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4" style={{ background: "rgba(0,0,0,0.55)" }} onClick={() => setModalOpen(false)}>
           <div className="relative w-full max-w-[600px] my-4" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setModalOpen(false)} aria-label="Close" className="absolute -top-3 -right-3 z-10 h-9 w-9 rounded-full bg-white text-gray-700 text-xl font-bold shadow-md flex items-center justify-center hover:bg-gray-100">×</button>
-            <SurveyCard key={seededAddress || "modal"} initialAddress={seededAddress ?? undefined} />
+            <SurveyCard key={seededAddress ?? rejectedAddress ?? "modal"} initialAddress={seededAddress ?? undefined} outOfAreaAddress={rejectedAddress ?? undefined} />
           </div>
         </div>
       )}

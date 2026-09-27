@@ -186,12 +186,15 @@ function validateName(name: string): { valid: boolean; msg: string } {
 
 interface SurveyCardProps {
   initialAddress?: string
+  /** When set, the card mounts straight onto the existing out-of-area screen for this
+   * address (used by the advertorial sticky bar, which gates before opening the modal). */
+  outOfAreaAddress?: string
 }
 
-export function SurveyCard({ initialAddress }: SurveyCardProps = {}) {
+export function SurveyCard({ initialAddress, outOfAreaAddress }: SurveyCardProps = {}) {
   const [step, setStep] = useState(initialAddress ? 2 : 1)
   const [surveyData, setSurveyData] = useState<SurveyData>({
-    address: initialAddress || "",
+    address: initialAddress || outOfAreaAddress || "",
     propertyType: "",
     isLegalOwner: "",
     ownershipLength: "",
@@ -205,8 +208,8 @@ export function SurveyCard({ initialAddress }: SurveyCardProps = {}) {
     phone: "",
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [isDisqualified, setIsDisqualified] = useState(false)
-  const [disqualifyReason, setDisqualifyReason] = useState("")
+  const [isDisqualified, setIsDisqualified] = useState(!!outOfAreaAddress)
+  const [disqualifyReason, setDisqualifyReason] = useState(outOfAreaAddress ? "outsideArea" : "")
   const [addressVerified, setAddressVerified] = useState(!!initialAddress)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
@@ -429,7 +432,7 @@ export function SurveyCard({ initialAddress }: SurveyCardProps = {}) {
             href={`tel:${config.phoneHref}`}
             className="mt-2 inline-flex items-center gap-2 rounded-xl bg-[var(--accent-secondary)] px-8 py-4 text-lg text-white hover:bg-[var(--accent-secondary)/90] transition-colors"
           >
-            {`Call Us: ${config.companyName}`}
+            {`Call Us: ${config.phoneDisplay}`}
           </a>
         </div>
       </div>
