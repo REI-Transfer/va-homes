@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRight, ArrowDown, Shield, Clock, DollarSign } from "lucide-react";
 import { SurveyCard } from "@/components/v2/survey-card";
 import { AddressAutocomplete, type AddressDetails } from "@/components/survey/address-autocomplete";
-import { getConfig } from "@/lib/config";
+import { getConfig, zipAllowedForState } from "@/lib/config";
 
 const config = getConfig();
 
@@ -25,7 +25,10 @@ export function HeroSection({ h1, sub }: HeroSectionProps = {}) {
     const state = details.state?.toUpperCase() || "";
     const county = details.county || "";
 
-    const stateOk = config.serviceStates.length === 0 || config.serviceStates.includes(state);
+    // State gate first (unchanged), then the per-state ZIP allowlist (additive).
+    const stateOk =
+      (config.serviceStates.length === 0 || config.serviceStates.includes(state)) &&
+      zipAllowedForState(state, details.postalCode, config.serviceZipsByState);
     
 
     if (stateOk) {

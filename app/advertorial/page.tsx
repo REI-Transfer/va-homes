@@ -24,6 +24,7 @@ export default function AdvertorialRoute() {
         accentColor={cfg.accentColor}
         serviceBounds={cfg.serviceBounds || undefined}
         serviceStates={cfg.serviceStates}
+        serviceZipsByState={cfg.serviceZipsByState}
         ownerName={cfg.ownerName}
       />
     </main>

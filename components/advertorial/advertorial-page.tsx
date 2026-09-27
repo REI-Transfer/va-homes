@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { SurveyCard } from "@/components/v2/survey-card"
 import { AddressAutocomplete, type AddressDetails } from "@/components/survey/address-autocomplete"
+import { zipAllowedForState } from "@/lib/config"
 
 // Advertorial editorial landing page. Embeds the SAME v2 SurveyCard the main live flow
 // (app/page.tsx) uses, which reads its own config, posts to /api/submit, and redirects to
@@ -28,6 +29,7 @@ interface AdvertorialPageProps {
   accentColor: string
   serviceBounds?: { south: number; north: number; west: number; east: number } | null
   serviceStates?: string[]
+  serviceZipsByState?: Record<string, string[]>
   ownerName?: string
   writerName?: string
   writerRole?: string
@@ -42,6 +44,7 @@ export function AdvertorialPage({
   accentColor,
   serviceBounds = null,
   serviceStates = [],
+  serviceZipsByState = {},
   ownerName,
   writerName = "Margaret Ellison",
   writerRole = "Senior Housing Correspondent",
@@ -74,12 +77,14 @@ export function AdvertorialPage({
   // Top-bar autocomplete selection. Run the SAME state geofence the v2 SurveyCard uses
   // (config.serviceStates). On a valid in-area pick, seed the address and open the popup at
   // step 2. Out-of-area or typed-without-select opens at step 1 so the DQ is never bypassed.
-  const isStateInArea = (state?: string) => {
-    const s = (state || "").toUpperCase()
-    return serviceStates.length === 0 || serviceStates.includes(s)
+  const isInArea = (details: AddressDetails) => {
+    const s = (details.state || "").toUpperCase()
+    const stateOk = serviceStates.length === 0 || serviceStates.includes(s)
+    // State gate first (unchanged), then the per-state ZIP allowlist (additive).
+    return stateOk && zipAllowedForState(s, details.postalCode, serviceZipsByState)
   }
   const handleStickySelect = (address: string, details: AddressDetails) => {
-    setSeededAddress(isStateInArea(details.state) ? address : null)
+    setSeededAddress(isInArea(details) ? address : null)
     setModalOpen(true)
   }
   const openModalFromButton = () => { setSeededAddress(null); setModalOpen(true) }
