@@ -9,6 +9,7 @@ export interface AddressDetails {
   state?: string
   city?: string
   county?: string
+  postalCode?: string
 }
 
 interface LatLngBoundsLiteral {
@@ -126,7 +127,8 @@ export function AddressAutocomplete({
         let state = ""
         let city = ""
         let county = ""
-        
+        let postalCode = ""
+
         place.address_components?.forEach((component) => {
           if (component.types.includes("administrative_area_level_1")) {
             state = component.short_name // e.g., "MD", "VA", "DC"
@@ -137,13 +139,17 @@ export function AddressAutocomplete({
           if (component.types.includes("administrative_area_level_2")) {
             county = component.long_name
           }
+          if (component.types.includes("postal_code")) {
+            postalCode = component.long_name // 5-digit ZIP; Google omits it for imprecise picks
+          }
         })
-        
+
         const details: AddressDetails = {
           formattedAddress: place.formatted_address,
           state,
           city,
           county,
+          postalCode,
         }
         
         onChange(place.formatted_address)
