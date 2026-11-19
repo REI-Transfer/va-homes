@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
+import { calculateLeadScore, leadQuality } from "@/lib/lead-score"
+import { lookupProperty, withPriority, applyConditionRule, legacyAnswers, recordUsable, parseUsAddress, type LookupInput, type LookupResult } from "@/lib/dealmachine"
+import { sellerAnswerRule } from "@/lib/form-rules"
 
 const BLOCKED_PHONES = ["7575893801"]
 const BLOCKED_EMAILS = ["charlesgaines99@gmail.com"]
@@ -144,6 +147,33 @@ function splitAddress(full: string): { city: string; state: string; zip: string 
   return out
 }
 
+// ── Property-record form (components/v2/record-survey-card.tsx, one-step) ──────
+// "123 Main St, Austin, TX 78701, USA" → "123 Main St"
+const streetOf = (address: string) => (address || "").split(",")[0].trim()
+
+// Low equity fires LeadLowIntent, an event GoFunnel already handles.
+const META_EVENT_FOR: Record<string, string> = { lead: "Lead", low_equity: "LeadLowIntent", low_intent: "LeadLowIntent" }
+
+// Property record fields for n8n. Booleans/numbers as-is, empty = "". Neutral names:
+// a client webhook that receives the whole payload must not learn the data vendor.
+function dmFields(dm: LookupResult, priority: string, reasonDetails: string) {
+  return {
+    record_found: dm.matched,
+    record_equity_pct: dm.equity_pct ?? "",
+    record_equity_band: dm.equity_band,
+    record_value: dm.value ?? "",
+    record_owed: dm.owed ?? "",
+    record_verdict: dm.verdict,
+    record_dq_reason: dm.dq_reason ?? "",
+    record_listed_now: dm.listed_now,
+    record_owner_match: dm.owner_match ?? "",
+    record_distress: dm.distress.join("; "),
+    record_excellent_bypass: dm.excellent_bypass === true,
+    property_summary: withPriority(dm.summary, priority, reasonDetails),
+    lookup_credits: dm.credits_used,
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -187,7 +217,73 @@ export async function POST(request: Request) {
     }
 
     // Add server IP to payload before forwarding to GHL
-    const payload = { ...data, server_ip: ip }
+    const payload: Record<string, unknown> = { ...data, server_ip: ip }
+
+    // ── Property record check (property-record form only) ─────────────────
+    // record_check marks its posts (one post, at the end, like the current form; its
+    // first check ran on /api/lookup, same house = no new credit). Every other post goes
+    // exactly as before and is never looked up.
+    const recordCheck = data.record_check === true
+    delete payload.record_check
+    delete payload.record_mode
+    let dm: LookupResult | null = null
+    if (recordCheck) {
+      // City / state / ZIP come from the address picker; when the address was typed in
+      // the hero box they are blank, so read them from the address text instead.
+      const parsed = parseUsAddress(typeof data.address === "string" ? data.address : "")
+      const input: LookupInput = {
+        street: streetOf(data.address), city: data.city || parsed.city, state: data.state || parsed.state,
+        zip: data.zip || parsed.zip, lastName: data.lastName || "",
+      }
+      // Fill the same blanks in what n8n / the CRM receives (only where empty).
+      for (const k of ["city", "state", "zip"] as const) {
+        if (!(typeof data[k] === "string" && data[k].trim()) && parsed[k]) payload[k] = parsed[k]
+      }
+      const landOwned = typeof data.landOwned === "string" ? data.landOwned : ""
+      dm = await lookupProperty(input, { landOwned })
+      dm = applyConditionRule(dm, typeof data.condition === "string" ? data.condition : "")
+      // The seller's own answers, by this client's rules (lib/form-rules.ts): an answer the
+      // client takes only as low intent turns a record Lead into a low intent lead.
+      if (dm.verdict === "lead" || dm.verdict === "low_equity") {
+        const own = sellerAnswerRule(data, recordUsable(dm))
+        if (own.rule === "low_intent") dm = { ...dm, verdict: "low_intent" }
+        else if (own.rule === "dq") dm = { ...dm, verdict: "dq", dq_reason: null }
+      }
+      Object.assign(payload, dmFields(dm, typeof data.priority === "string" ? data.priority : "",
+        typeof data.reasonDetails === "string" ? data.reasonDetails : ""))
+      // Same fields, same format: fill the old answer fields the seller wasn't asked,
+      // from the record, so the CRM mapping keeps working untouched.
+      if (dm.matched) {
+        for (const [k, v] of Object.entries(legacyAnswers(dm))) {
+          const answered = typeof data[k] === "string" && data[k].trim() !== ""
+          if (v && !answered) payload[k] = v
+        }
+      }
+      if (META_EVENT_FOR[dm.verdict]) {
+        Object.assign(payload, {
+          qualified: dm.verdict === "lead",
+          meta_event_name: META_EVENT_FOR[dm.verdict],
+          meta_value: dm.verdict === "lead" ? payload.meta_value : 0,
+        })
+      }
+      // Re-score after the record filled the answers the seller was not asked, so
+      // lead_score / lead_quality / the Lead value match the current form for the same house.
+      const str = (k: string) => (typeof payload[k] === "string" ? (payload[k] as string) : "")
+      const score = calculateLeadScore({ timeline: str("timeline"), ownershipLength: str("ownershipLength"), reason: str("reason"), condition: str("condition") })
+      payload.lead_score = score
+      payload.lead_quality = leadQuality(score)
+      // Record says Lead → score x 25. No usable record (current rules) → keep the
+      // browser's Lead / no-Lead decision, re-valued with the same score.
+      if (dm.verdict === "lead") payload.meta_value = score * 25
+      else if (dm.verdict === "fallback" && Number(payload.meta_value) > 0) payload.meta_value = score * 25
+      else payload.meta_value = 0
+      // Screened out by the record at the very end: not sent anywhere (no n8n, no Meta
+      // CAPI, no GoFunnel), the same as the current form's screen-outs, which never send.
+      // The seller still sees the normal thank-you page.
+      if (dm.verdict === "dq") {
+        return NextResponse.json({ success: true, verdict: dm.verdict, dq_reason: dm.dq_reason, lead_score: payload.lead_score })
+      }
+    }
 
     // 1) Forward to GHL/LeadConnector webhook
     const webhookUrl = process.env.WEBHOOK_URL
@@ -224,8 +320,8 @@ export async function POST(request: Request) {
         pixelId,
         token: capiToken,
         eventId: data.meta_event_id,
-        eventName: data.meta_event_name || "Lead",
-        value: typeof data.meta_value === "number" ? data.meta_value : 0,
+        eventName: (payload.meta_event_name as string) || "Lead",
+        value: typeof payload.meta_value === "number" ? payload.meta_value : 0,
         eventSourceUrl,
         clientIp: ip,
         userAgent: request.headers.get("user-agent") || "",
@@ -269,14 +365,15 @@ export async function POST(request: Request) {
             asking_price: gfStr(data.askingPrice),
             condition: gfStr(data.condition),
             reason: gfStr(data.reason),
+            priority: gfStr(data.priority),
           },
           data: {
-            qualified: data.qualified === true,
-            lead_score: data.lead_score,
-            lead_quality: data.lead_quality,
+            qualified: payload.qualified === true,
+            lead_score: payload.lead_score,
+            lead_quality: payload.lead_quality,
             meta_event_id: data.meta_event_id,
-            meta_event_name: data.meta_event_name,
-            meta_value: data.meta_value,
+            meta_event_name: payload.meta_event_name,
+            meta_value: payload.meta_value,
             address: data.address,
             state: data.state,
             city: data.city,
@@ -302,7 +399,7 @@ export async function POST(request: Request) {
       }
     } catch {}
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, ...(dm ? { verdict: dm.verdict, dq_reason: dm.dq_reason, lead_score: payload.lead_score } : {}) })
   } catch {
     return NextResponse.json({ success: false }, { status: 500 })
   }

@@ -7,6 +7,8 @@ import { captureTrackingData, getIPAddress } from "@/lib/tracking"
 import { Input } from "@/components/ui/input"
 import { AddressAutocomplete, type AddressDetails } from "@/components/survey/address-autocomplete"
 import { getConfig, zipAllowedForState } from "@/lib/config"
+import { clientBrand } from "@/lib/brand"
+import { RecordSurveyCard } from "@/components/v2/record-survey-card"
 
 const config = getConfig()
 
@@ -185,14 +187,14 @@ function validateName(name: string): { valid: boolean; msg: string } {
   return { valid: true, msg: "" }
 }
 
-interface SurveyCardProps {
+export interface SurveyCardProps {
   initialAddress?: string
   /** When set, the card mounts straight onto the existing out-of-area screen for this
    * address (used by the advertorial sticky bar, which gates before opening the modal). */
   outOfAreaAddress?: string
 }
 
-export function SurveyCard({ initialAddress, outOfAreaAddress }: SurveyCardProps = {}) {
+function CurrentSurveyCard({ initialAddress, outOfAreaAddress }: SurveyCardProps = {}) {
   const [step, setStep] = useState(initialAddress ? 2 : 1)
   const [surveyData, setSurveyData] = useState<SurveyData>({
     address: initialAddress || outOfAreaAddress || "",
@@ -690,4 +692,15 @@ export function SurveyCard({ initialAddress, outOfAreaAddress }: SurveyCardProps
       </div>
     </div>
   )
+}
+
+// NEXT_PUBLIC_RECORD_FORM=one-step|two-step: the property-record form (record-survey-card.tsx).
+// Unset = this site's current form above, untouched (unset + redeploy = rollback).
+// outOfAreaAddress (advertorial bar, already gated) keeps the current out-of-area screen.
+const brand = clientBrand()
+export function SurveyCard(props: SurveyCardProps = {}) {
+  if (brand.recordForm && !props.outOfAreaAddress) {
+    return <RecordSurveyCard initialAddress={props.initialAddress} brand={brand} mode={brand.recordMode} />
+  }
+  return <CurrentSurveyCard {...props} />
 }
