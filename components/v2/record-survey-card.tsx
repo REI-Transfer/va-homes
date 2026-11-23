@@ -486,10 +486,9 @@ export function RecordSurveyCard({ initialAddress, brand, mode = "two-step" }: {
     const extra: Stage2Field[] = extraQuestions().includes("askingPrice") ? ["askingPrice"] : []
     const tail: Stage2Field[] = oneStep ? ["reason", ...extra] : ["reason", "priority", ...extra]
     if (!dmMatched) {
-      return ["isLegalOwner", "listedOnMarket", "propertyType", ...(mobile ? ["landOwned" as const] : []), "ownershipLength", ...tail]
+      return ["listedOnMarket", "propertyType", ...(mobile ? ["landOwned" as const] : []), "ownershipLength", ...tail]
     }
     return [
-      ...(dmAsk.includes("isLegalOwner") ? ["isLegalOwner" as const] : []),
       ...(dmAsk.includes("propertyType") ? ["propertyType" as const] : []),
       ...(mobile ? ["landOwned" as const] : []),
       ...(dmAsk.includes("ownershipLength") ? ["ownershipLength" as const] : []),
